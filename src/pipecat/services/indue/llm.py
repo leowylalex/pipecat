@@ -13,7 +13,7 @@ from openai.types.chat import ChatCompletionChunk
 from pipecat.frames.frames import ErrorFrame, Frame, StartFrame
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.frame_processor import FrameDirection
-from pipecat.services.dograh.mps_billing import (
+from pipecat.services.indue.mps_billing import (
     MPS_BILLING_VERSION_KEY,
     MPS_BILLING_VERSION_V2,
     get_correlation_id,
@@ -23,7 +23,7 @@ from pipecat.services.openai.base_llm import OpenAILLMInvocationParams, OpenAILL
 from pipecat.services.openai.llm import OpenAILLMService
 
 
-class DograhLLMService(OpenAILLMService):
+class IndueLLMService(OpenAILLMService):
     """A unified LLM service using Dograh's API with OpenAI-compatible interface.
 
     This service extends OpenAILLMService to connect to Dograh's unified API endpoint

@@ -25,7 +25,7 @@ from pipecat.services.deepgram.flux.base import (
     DeepgramFluxSTTBase,
     DeepgramFluxSTTSettings,
 )
-from pipecat.services.dograh.mps_billing import (
+from pipecat.services.indue.mps_billing import (
     MPS_BILLING_VERSION_KEY,
     MPS_BILLING_VERSION_V2,
     get_correlation_id,
@@ -34,12 +34,12 @@ from pipecat.services.dograh.mps_billing import (
 from pipecat.services.websocket_service import WebsocketService
 
 __all__ = [
-    "DograhFluxSTTService",
+    "IndueFluxSTTService",
     "DeepgramFluxSTTSettings",
 ]
 
 
-class DograhFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
+class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
     """Dograh Flux speech-to-text service.
 
     Provides Deepgram Flux turn detection through the Dograh managed model

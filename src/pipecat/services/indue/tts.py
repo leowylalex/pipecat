@@ -27,7 +27,7 @@ from pipecat.frames.frames import (
     TTSStoppedFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection
-from pipecat.services.dograh.mps_billing import (
+from pipecat.services.indue.mps_billing import (
     MPS_BILLING_VERSION_KEY,
     MPS_BILLING_VERSION_V2,
     get_correlation_id,
@@ -73,8 +73,8 @@ def calculate_word_times(
 
 
 @dataclass
-class DograhTTSSettings(TTSSettings):
-    """Settings for DograhTTSService.
+class IndueTTSSettings(TTSSettings):
+    """Settings for IndueTTSService.
 
     Parameters:
         speed: Speech speed control (0.5 to 2.0).
@@ -87,14 +87,14 @@ class DograhTTSSettings(TTSSettings):
     volume: float | None | _NotGiven = field(default_factory=lambda: NOT_GIVEN)
 
 
-class DograhTTSService(WebsocketTTSService):
+class IndueTTSService(WebsocketTTSService):
     """Dograh WebSocket-based TTS service with word timestamps.
 
     This service provides real-time text-to-speech using Dograh's unified WebSocket API.
     Supports word-level timestamps and audio streaming.
     """
 
-    Settings = DograhTTSSettings
+    Settings = IndueTTSSettings
 
     def __init__(
         self,
@@ -104,7 +104,7 @@ class DograhTTSService(WebsocketTTSService):
         ws_path: str = "/api/v1/tts/stream",
         correlation_id: str | None = None,
         sample_rate: int | None = None,
-        settings: DograhTTSSettings | None = None,
+        settings: IndueTTSSettings | None = None,
         text_aggregation_mode: TextAggregationMode | None = None,
         **kwargs,
     ):
@@ -120,7 +120,7 @@ class DograhTTSService(WebsocketTTSService):
             text_aggregation_mode: How to aggregate incoming text before synthesis.
             **kwargs: Additional arguments passed to the parent service.
         """
-        default_settings = DograhTTSSettings(
+        default_settings = IndueTTSSettings(
             model="default",
             voice="default",
             language="en",

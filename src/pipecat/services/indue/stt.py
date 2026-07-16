@@ -27,14 +27,14 @@ from pipecat.frames.frames import (
     VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection
-from pipecat.services.dograh.mps_billing import (
+from pipecat.services.indue.mps_billing import (
     MPS_BILLING_VERSION_KEY,
     MPS_BILLING_VERSION_V2,
     get_correlation_id,
     uses_mps_billing_v2,
 )
 from pipecat.services.settings import STTSettings
-from pipecat.services.stt_latency import DOGRAH_TTFS_P99
+from pipecat.services.stt_latency import INDUE_TTFS_P99
 from pipecat.services.stt_service import STTService
 from pipecat.services.websocket_service import WebsocketService
 from pipecat.transcriptions.language import Language
@@ -52,20 +52,20 @@ except ModuleNotFoundError as e:
 
 
 @dataclass
-class DograhSTTSettings(STTSettings):
-    """Settings for DograhSTTService."""
+class IndueSTTSettings(STTSettings):
+    """Settings for IndueSTTService."""
 
     pass
 
 
-class DograhSTTService(STTService, WebsocketService):
+class IndueSTTService(STTService, WebsocketService):
     """Dograh speech-to-text service using WebSocket streaming.
 
     This service provides real-time speech recognition using Dograh's unified WebSocket API.
     Supports streaming transcription, interim results, and VAD events.
     """
 
-    Settings = DograhSTTSettings
+    Settings = IndueSTTSettings
 
     def __init__(
         self,
@@ -78,8 +78,8 @@ class DograhSTTService(STTService, WebsocketService):
         interim_results: bool = True,
         vad_events: bool = False,
         keyterms: list[str] | None = None,
-        settings: DograhSTTSettings | None = None,
-        ttfs_p99_latency: float | None = DOGRAH_TTFS_P99,
+        settings: IndueSTTSettings | None = None,
+        ttfs_p99_latency: float | None = INDUE_TTFS_P99,
         **kwargs,
     ):
         """Initialize STT service.
@@ -98,7 +98,7 @@ class DograhSTTService(STTService, WebsocketService):
                 Override for your deployment. See https://github.com/pipecat-ai/stt-benchmark
             **kwargs: Additional arguments passed to the parent services.
         """
-        default_settings = DograhSTTSettings(model="default", language="multi")
+        default_settings = IndueSTTSettings(model="default", language="multi")
         if settings is not None:
             default_settings.apply_update(settings)
 
