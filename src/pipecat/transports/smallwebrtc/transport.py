@@ -335,7 +335,11 @@ class SmallWebRTCClient:
                     and video_track
                     and video_track.is_enabled()
                 ):
-                    logger.warning("Timeout: No video frame received within the specified time.")
+                    # Trace, not warning: clients pre-negotiate a video
+                    # transceiver that stays idle until the caller actually
+                    # shares their camera/screen, so this timeout is the
+                    # steady state of every call.
+                    logger.trace("Timeout: No video frame received within the specified time.")
                     # self._webrtc_connection.ask_to_renegotiate()
                 frame = None
             except MediaStreamError:
