@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""Dograh Flux STT service: Deepgram Flux turn detection proxied via the Dograh MPS."""
+"""Indue Flux STT service: Deepgram Flux turn detection proxied via the Indue MPS."""
 
 import json
 import time
@@ -40,12 +40,12 @@ __all__ = [
 
 
 class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
-    """Dograh Flux speech-to-text service.
+    """Indue Flux speech-to-text service.
 
-    Provides Deepgram Flux turn detection through the Dograh managed model
+    Provides Deepgram Flux turn detection through the Indue managed model
     services (MPS) proxy. All Flux protocol handling (turn detection, metrics,
     settings) is inherited from ``DeepgramFluxSTTBase``; this class only
-    implements the transport: a WebSocket to the Dograh MPS Flux endpoint with
+    implements the transport: a WebSocket to the Indue MPS Flux endpoint with
     Bearer auth and MPS billing/correlation carried in the query string. The
     proxy forwards native Flux messages, so the inherited message handling
     applies unchanged.
@@ -83,11 +83,11 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
         settings: Settings | None = None,
         **kwargs,
     ):
-        """Initialize the Dograh Flux STT service.
+        """Initialize the Indue Flux STT service.
 
         Args:
-            api_key: Dograh API key for authentication (sent as a Bearer token).
-            base_url: WebSocket base URL for the Dograh MPS. Defaults to
+            api_key: Indue API key for authentication (sent as a Bearer token).
+            base_url: WebSocket base URL for the Indue MPS. Defaults to
                 "wss://services.dograh.com".
             ws_path: WebSocket path for the Flux STT endpoint. Defaults to
                 "/api/v1/stt/flux".
@@ -165,7 +165,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
             start_metadata=self._start_metadata,
         )
 
-    def _build_dograh_query_string(self) -> str:
+    def _build_indue_query_string(self) -> str:
         """Append MPS billing/correlation params to the inherited Flux query."""
         query = self._build_query_string()
         correlation_id = self._get_correlation_id()
@@ -210,7 +210,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
     async def _connect(self):
         """Build the MPS Flux URL and open the WebSocket connection."""
         await super()._connect()
-        self._websocket_url = f"{self._base_url}{self._ws_path}?{self._build_dograh_query_string()}"
+        self._websocket_url = f"{self._base_url}{self._ws_path}?{self._build_indue_query_string()}"
         await self._connect_websocket()
 
     async def _disconnect(self):
@@ -225,7 +225,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
             self._websocket = None
 
     async def _connect_websocket(self):
-        """Establish the WebSocket connection to the Dograh MPS Flux endpoint."""
+        """Establish the WebSocket connection to the Indue MPS Flux endpoint."""
         try:
             if self._websocket and self._websocket.state is State.OPEN:
                 return
@@ -249,7 +249,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
 
             logger.debug("WebSocket connected, waiting for server confirmation...")
             await self._connection_established_event.wait()
-            logger.debug("Connected to Dograh Flux WebSocket")
+            logger.debug("Connected to Indue Flux WebSocket")
             await self._call_event_handler("on_connected")
         except Exception as e:
             await self.push_error(error_msg=f"Unknown error occurred: {e}", exception=e)
@@ -272,7 +272,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
 
             if self._websocket:
                 await self._send_close_stream()
-                logger.debug("Disconnecting from Dograh Flux WebSocket")
+                logger.debug("Disconnecting from Indue Flux WebSocket")
                 await self._websocket.close()
         except Exception as e:
             await self.push_error(error_msg=f"Error closing websocket: {e}", exception=e)
@@ -285,7 +285,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
     # ------------------------------------------------------------------
 
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame | None, None]:
-        """Send audio data to the Dograh MPS for Flux transcription.
+        """Send audio data to the Indue MPS for Flux transcription.
 
         Args:
             audio: Raw audio bytes in linear16 format.
@@ -315,7 +315,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
         """Receive messages from the proxy and dispatch them.
 
         Native Flux messages (capitalized ``type`` values) are handled by the
-        base. The Dograh proxy injects its own control messages with a
+        base. The Indue proxy injects its own control messages with a
         lowercase ``"error"`` type for billing/quota conditions, handled here.
         """
         async for message in self._get_websocket():
@@ -341,7 +341,7 @@ class IndueFluxSTTService(DeepgramFluxSTTBase, WebsocketService):
                 raise
 
     async def _handle_proxy_error(self, data: dict):
-        """Handle a Dograh proxy control error (e.g. quota exceeded)."""
+        """Handle a Indue proxy control error (e.g. quota exceeded)."""
         error_msg = data.get("error") or data.get("message", "Unknown error")
         is_quota_error = "quota" in error_msg.lower()
 

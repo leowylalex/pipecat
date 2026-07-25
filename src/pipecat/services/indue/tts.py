@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""Dograh TTS Service implementation using WebSocket streaming."""
+"""Indue TTS Service implementation using WebSocket streaming."""
 
 import asyncio
 import base64
@@ -44,7 +44,7 @@ try:
     from websockets.protocol import State
 except ModuleNotFoundError as e:
     logger.error(f"Exception: {e}")
-    logger.error("In order to use Dograh TTS, you need to `pip install websockets`.")
+    logger.error("In order to use Indue TTS, you need to `pip install websockets`.")
     raise Exception(f"Missing module: {e}")
 
 
@@ -54,7 +54,7 @@ def calculate_word_times(
     """Calculate word timestamps from alignment information.
 
     Args:
-        alignment_info: Word alignment data from Dograh API.
+        alignment_info: Word alignment data from Indue API.
         cumulative_time: Base time offset for this chunk.
 
     Returns:
@@ -88,9 +88,9 @@ class IndueTTSSettings(TTSSettings):
 
 
 class IndueTTSService(WebsocketTTSService):
-    """Dograh WebSocket-based TTS service with word timestamps.
+    """Indue WebSocket-based TTS service with word timestamps.
 
-    This service provides real-time text-to-speech using Dograh's unified WebSocket API.
+    This service provides real-time text-to-speech using Indue's unified WebSocket API.
     Supports word-level timestamps and audio streaming.
     """
 
@@ -108,11 +108,11 @@ class IndueTTSService(WebsocketTTSService):
         text_aggregation_mode: TextAggregationMode | None = None,
         **kwargs,
     ):
-        """Initialize Dograh TTS service.
+        """Initialize Indue TTS service.
 
         Args:
-            api_key: The Dograh API key for authentication.
-            base_url: WebSocket base URL for Dograh API. Defaults to "wss://services.dograh.com".
+            api_key: The Indue API key for authentication.
+            base_url: WebSocket base URL for Indue API. Defaults to "wss://services.dograh.com".
             ws_path: WebSocket path for TTS streaming. Defaults to "/api/v1/tts/stream".
             correlation_id: Optional server-generated correlation ID for MPS billing v2.
             sample_rate: Output audio sample rate in Hz. Defaults to None.
@@ -170,7 +170,7 @@ class IndueTTSService(WebsocketTTSService):
         """Check if this service can generate processing metrics.
 
         Returns:
-            True, as Dograh service supports metrics generation.
+            True, as Indue service supports metrics generation.
         """
         return True
 
@@ -200,7 +200,7 @@ class IndueTTSService(WebsocketTTSService):
         )
 
     async def _connect_websocket(self):
-        """Establish the websocket connection to Dograh TTS service."""
+        """Establish the websocket connection to Indue TTS service."""
         try:
             if self._websocket and self._websocket.state is State.OPEN:
                 return
@@ -211,7 +211,7 @@ class IndueTTSService(WebsocketTTSService):
                 "Content-Type": "application/json",
             }
 
-            logger.debug(f"Connecting to Dograh TTS WebSocket at {url}")
+            logger.debug(f"Connecting to Indue TTS WebSocket at {url}")
             ws = await websocket_connect(url, additional_headers=headers)
             self._websocket = ws
             self._remote_initialized_context_ids.clear()
@@ -236,24 +236,24 @@ class IndueTTSService(WebsocketTTSService):
 
             await ws.send(json.dumps(config_msg))
 
-            logger.info(f"Connected to Dograh TTS service")
+            logger.info(f"Connected to Indue TTS service")
 
         except Exception as e:
             self._websocket = None
-            logger.error(f"Failed to connect to Dograh TTS service: {e}")
+            logger.error(f"Failed to connect to Indue TTS service: {e}")
             raise
 
     async def _disconnect_websocket(self):
-        """Close the websocket connection to Dograh TTS service."""
+        """Close the websocket connection to Indue TTS service."""
         try:
             await self.stop_all_metrics()
 
             if self._websocket:
-                logger.debug("Disconnecting from Dograh TTS service")
+                logger.debug("Disconnecting from Indue TTS service")
                 await self._websocket.close()
-                logger.debug("Disconnected from Dograh TTS service")
+                logger.debug("Disconnected from Indue TTS service")
         except Exception as e:
-            logger.error(f"Error disconnecting from Dograh TTS service: {e}")
+            logger.error(f"Error disconnecting from Indue TTS service: {e}")
         finally:
             self._remote_initialized_context_ids.clear()
             self._finished_context_ids.clear()
@@ -262,7 +262,7 @@ class IndueTTSService(WebsocketTTSService):
             self._websocket = None
 
     async def _connect(self):
-        """Connect to the Dograh TTS service with full initialization."""
+        """Connect to the Indue TTS service with full initialization."""
         await super()._connect()
 
         await self._connect_websocket()
@@ -274,7 +274,7 @@ class IndueTTSService(WebsocketTTSService):
             self._keepalive_task = self.create_task(self._keepalive_task_handler())
 
     async def _disconnect(self):
-        """Disconnect from Dograh TTS service and clean up tasks."""
+        """Disconnect from Indue TTS service and clean up tasks."""
         await super()._disconnect()
 
         if self._receive_task:
@@ -301,7 +301,7 @@ class IndueTTSService(WebsocketTTSService):
         raise Exception("Websocket not connected")
 
     async def _receive_messages(self):
-        """Handle incoming WebSocket messages from Dograh."""
+        """Handle incoming WebSocket messages from Indue."""
         async for message in self._get_websocket():
             try:
                 msg = json.loads(message)
@@ -392,15 +392,15 @@ class IndueTTSService(WebsocketTTSService):
                         # Raise CancelledError to cleanly cancel the receive task
                         raise asyncio.CancelledError("Quota exceeded - cancelling receive task")
                     else:
-                        raise Exception(f"Dograh TTS error: {error_msg}")
+                        raise Exception(f"Indue TTS error: {error_msg}")
 
             except asyncio.CancelledError:
                 raise
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to decode message from Dograh: {e}")
+                logger.error(f"Failed to decode message from Indue: {e}")
                 raise
             except Exception as e:
-                logger.error(f"Error processing Dograh TTS message: {e}")
+                logger.error(f"Error processing Indue TTS message: {e}")
                 raise
 
     async def _keepalive_task_handler(self):
@@ -438,7 +438,7 @@ class IndueTTSService(WebsocketTTSService):
 
     @traced_tts
     async def run_tts(self, text: str, context_id: str) -> AsyncGenerator[Frame | None, None]:
-        """Generate speech from text using Dograh's streaming WebSocket API.
+        """Generate speech from text using Indue's streaming WebSocket API.
 
         Args:
             text: The text to synthesize into speech.
@@ -562,7 +562,7 @@ class IndueTTSService(WebsocketTTSService):
         await self._finalize_context_state()
 
     async def on_audio_context_interrupted(self, context_id: str):
-        """Cancel the Dograh context when the bot is interrupted."""
+        """Cancel the Indue context when the bot is interrupted."""
         await self._cancel_context(context_id)
         await super().on_audio_context_interrupted(context_id)
 

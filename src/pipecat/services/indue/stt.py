@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""Dograh STT Service implementation using WebSocket streaming."""
+"""Indue STT Service implementation using WebSocket streaming."""
 
 import asyncio
 import json
@@ -59,9 +59,9 @@ class IndueSTTSettings(STTSettings):
 
 
 class IndueSTTService(STTService, WebsocketService):
-    """Dograh speech-to-text service using WebSocket streaming.
+    """Indue speech-to-text service using WebSocket streaming.
 
-    This service provides real-time speech recognition using Dograh's unified WebSocket API.
+    This service provides real-time speech recognition using Indue's unified WebSocket API.
     Supports streaming transcription, interim results, and VAD events.
     """
 
@@ -85,8 +85,8 @@ class IndueSTTService(STTService, WebsocketService):
         """Initialize STT service.
 
         Args:
-            api_key: The Dograh API key for authentication.
-            base_url: WebSocket base URL for Dograh API. Defaults to "wss://services.dograh.com".
+            api_key: The Indue API key for authentication.
+            base_url: WebSocket base URL for Indue API. Defaults to "wss://services.dograh.com".
             ws_path: WebSocket path for STT streaming. Defaults to "/api/v1/stt/stream".
             correlation_id: Optional server-generated correlation ID for MPS billing v2.
             sample_rate: Audio sample rate in Hz. Defaults to None.
@@ -255,7 +255,7 @@ class IndueSTTService(STTService, WebsocketService):
         await self.push_frame(frame, FrameDirection.UPSTREAM)
 
     async def _receive_messages(self):
-        """Handle incoming WebSocket messages from Dograh."""
+        """Handle incoming WebSocket messages from Indue."""
         # If websocket was closed (e.g., due to quota exceeded), just return
         if not self._websocket:
             return
@@ -324,7 +324,7 @@ class IndueSTTService(STTService, WebsocketService):
             except asyncio.CancelledError:
                 raise
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to decode message from Dograh: {e}")
+                logger.error(f"Failed to decode message from Indue: {e}")
                 raise
             except Exception as e:
                 logger.error(f"Error processing STT message: {e}")
@@ -354,14 +354,14 @@ class IndueSTTService(STTService, WebsocketService):
         pass
 
     async def _send_finalize(self):
-        """Send finalize message to Dograh server to flush the current transcript."""
+        """Send finalize message to Indue server to flush the current transcript."""
         if self._websocket and self._websocket.state == State.OPEN:
             finalize_msg = json.dumps({"type": "finalize"})
             await self._websocket.send(finalize_msg)
             logger.trace("Sent finalize to STT server")
 
     async def _handle_transcription(self, msg: dict):
-        """Process transcription message from Dograh."""
+        """Process transcription message from Indue."""
         transcript = msg.get("text", "")
         is_final = msg.get("is_final", False)
         from_finalize = msg.get("from_finalize", False)
@@ -454,7 +454,7 @@ class IndueSTTService(STTService, WebsocketService):
         self._session_start_time = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
-        """Process frames with Dograh-specific handling.
+        """Process frames with Indue-specific handling.
 
         Args:
             frame: The frame to process.
@@ -463,14 +463,14 @@ class IndueSTTService(STTService, WebsocketService):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, VADUserStoppedSpeakingFrame):
-            # Send finalize to flush the current transcript from Deepgram (via Dograh server)
+            # Send finalize to flush the current transcript from Deepgram (via Indue server)
             if self._websocket and self._websocket.state == State.OPEN:
                 self.request_finalize()
                 await self._send_finalize()
                 logger.trace(f"Triggered finalize event on: {frame.name=}, {direction=}")
 
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame | None, None]:
-        """Send audio data to Dograh for transcription.
+        """Send audio data to Indue for transcription.
 
         Args:
             audio: Raw audio bytes to transcribe.
