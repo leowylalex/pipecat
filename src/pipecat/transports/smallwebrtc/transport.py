@@ -175,19 +175,24 @@ class RawAudioTrack(AudioStreamTrack):
                 # the wire hiccuping.
                 self._start = time.time() - (self._timestamp / self._sample_rate)
 
-        if not self._chunk_queue:
-            if self._auto_silence:
-                chunk = bytes(self._bytes_per_10ms)
-            else:
-                while not self._chunk_queue:
-                    await asyncio.sleep(0.005)
+        if not self._chunk_queue and not self._auto_silence:
+            while not self._chunk_queue:
+                await asyncio.sleep(0.005)
+
+        # Emit a 20ms frame (two 10ms chunks). Opus packetizes at 20ms, so
+        # 10ms frames doubled every wakeup and encoder submission for nothing —
+        # on a small host that overhead is pacing jitter. Missing halves are
+        # padded with silence (same as the old per-chunk auto_silence).
+        parts = []
+        for _ in range(2):
+            if self._chunk_queue:
                 chunk, future = self._chunk_queue.popleft()
                 if future and not future.done():
                     future.set_result(True)
-        else:
-            chunk, future = self._chunk_queue.popleft()
-            if future and not future.done():
-                future.set_result(True)
+                parts.append(chunk)
+            else:
+                parts.append(bytes(self._bytes_per_10ms))
+        chunk = b"".join(parts)
 
         # Convert the byte data to an ndarray of int16 samples
         samples = np.frombuffer(chunk, dtype=np.int16)
@@ -197,7 +202,7 @@ class RawAudioTrack(AudioStreamTrack):
         frame.sample_rate = self._sample_rate
         frame.pts = self._timestamp
         frame.time_base = fractions.Fraction(1, self._sample_rate)
-        self._timestamp += self._samples_per_10ms
+        self._timestamp += self._samples_per_10ms * 2
         return frame
 
 
