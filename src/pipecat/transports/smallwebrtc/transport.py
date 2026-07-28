@@ -97,6 +97,19 @@ class RawAudioTrack(AudioStreamTrack):
         self._start = time.time()
         # Queue of (bytes, future), broken into 10ms sub chunks as needed
         self._chunk_queue = deque()
+        # Pacing guards (see recv()):
+        # - Catch-up cap: after an event-loop stall the naive schedule computes
+        #   negative waits for the whole backlog and machine-guns it onto the
+        #   wire in one loop turn — the receiver hears a burst, then a drought
+        #   (measured browser-side as concealed samples with zero packet loss).
+        #   Beyond this debt we re-anchor the clock and resume a steady cadence.
+        self._max_catchup_s = 0.04
+        # - Read-ahead: resolving the writer's future only when its LAST chunk
+        #   is consumed drains the queue to zero every write, so each 10ms tick
+        #   races the whole pipeline refill. Keeping up to this many 10ms
+        #   chunks buffered lets the writer run ahead and absorbs refill jitter
+        #   (80ms — well under the receiver's own adaptive buffer).
+        self._read_ahead_chunks = 8
 
     def add_audio_bytes(self, audio_bytes: bytes):
         """Add audio bytes to the buffer for transmission.
@@ -120,6 +133,12 @@ class RawAudioTrack(AudioStreamTrack):
             # Only the last chunk carries the future to be resolved once fully consumed
             fut = future if i + self._bytes_per_10ms >= len(audio_bytes) else None
             self._chunk_queue.append((chunk, fut))
+
+        # Read-ahead: while the standing buffer is shallow, complete the future
+        # immediately so the writer keeps refilling instead of sleeping until
+        # the last chunk is consumed (see __init__ notes).
+        if len(self._chunk_queue) <= self._read_ahead_chunks and not future.done():
+            future.set_result(True)
 
         return future
 
@@ -149,6 +168,12 @@ class RawAudioTrack(AudioStreamTrack):
             wait = self._start + (self._timestamp / self._sample_rate) - time.time()
             if wait > 0:
                 await asyncio.sleep(wait)
+            elif wait < -self._max_catchup_s:
+                # The loop stalled past the catch-up budget: re-anchor instead
+                # of bursting the backlog. The queued audio still plays, paced
+                # at real time; total latency stretches slightly rather than
+                # the wire hiccuping.
+                self._start = time.time() - (self._timestamp / self._sample_rate)
 
         if not self._chunk_queue:
             if self._auto_silence:

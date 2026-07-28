@@ -868,7 +868,10 @@ class FrameProcessor(BaseObject):
         try:
             timestamp = self._clock.get_time() if self._clock else 0
             if direction == FrameDirection.DOWNSTREAM and self._next:
-                logger.trace(f"Pushing {frame} downstream from {self} to {self._next}")
+                logger.opt(lazy=True).trace(
+                    "Pushing {a} downstream from {b} to {c}",
+                    a=lambda: str(frame), b=lambda: str(self), c=lambda: str(self._next),
+                )
 
                 if self._observer:
                     data = FramePushed(
@@ -881,7 +884,10 @@ class FrameProcessor(BaseObject):
                     await self._observer.on_push_frame(data)
                 await self._next.queue_frame(frame, direction)
             elif direction == FrameDirection.UPSTREAM and self._prev:
-                logger.trace(f"Pushing {frame} upstream from {self} to {self._prev}")
+                logger.opt(lazy=True).trace(
+                    "Pushing {a} upstream from {b} to {c}",
+                    a=lambda: str(frame), b=lambda: str(self), c=lambda: str(self._prev),
+                )
                 if self._observer:
                     data = FramePushed(
                         source=self,
